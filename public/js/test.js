@@ -1,15 +1,108 @@
 mapboxgl.accessToken = 'pk.eyJ1IjoicmFwb295IiwiYSI6ImNrdzZtZ2JudDJ4OGYyb21xdTdyY2lvODEifQ.4r-kFtr5K0mssK_1c22R9A'
 
-places_temp = ""
-places = ""
+var map, curLng, curLat, places_temp, places
+
 var layerIDs = []; // Will contain a list used to filter against.
 var filterGroup = document.getElementById('filter-group');
 
 navigator.geolocation.getCurrentPosition(successLocation, errorLocation, {
-    enableHighAccuracy: true
+    enableHighAccuracy: true,
 })
 
-function loadMarker() {
+function goHere(lng1, lat1, lng2, lat2) {
+    deleteExistingRoute()
+    deleteExistingDistanceLabel()
+
+    const _url = `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/` + lng1 + `,` + lat1 + `;` + lng2 + `,` + lat2 + `?overview=full&geometries=geojson&access_token=` + mapboxgl.accessToken
+    console.log(_url)
+
+    $.ajax({
+        url: _url,
+        method: 'get',
+        success: function (response) {
+
+            map.addLayer({
+                id: 'route',
+                type: 'line',
+                source: {
+                    'type': 'geojson',
+                    'data': {
+                        'type': 'Feature',
+                        'properties': {},
+                        'geometry': {
+                            'type': 'LineString',
+                            'coordinates': response.routes[0].geometry.coordinates,
+                        },
+                    }
+                },
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': '#FF0000',
+                    'line-width': 8
+                }
+            })
+
+            // add distance label
+            map.addSource('distanceLabel', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'FeatureCollection',
+                    'features': [{
+                            'type': 'Feature',
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': [
+                                    parseFloat(lng2), parseFloat(lat2)
+                                ]
+                            },
+                            'properties': {
+                                'description': response.routes[0].distance + " m"
+                            }
+                        }
+                    ]
+                }
+            });
+
+            map.addLayer({
+                'id': 'distanceLabelLayer',
+                'type': 'symbol',
+                'source': 'distanceLabel',
+                'layout': {
+                    'text-field': ['get', 'description'],
+                    'text-font': [
+                        'Open Sans Semibold',
+                        'Arial Unicode MS Bold'
+                    ],
+                    'text-offset': [0, -9],
+                    'text-anchor': 'top'
+                }
+            });
+
+            map.flyTo({center:[lng2, lat2]})
+        }
+    });
+
+}
+
+function deleteExistingRoute(){
+    try {
+        map.removeLayer('route')
+        map.removeSource('route')
+    } catch(err) {
+        console.log(err)
+    }
+}
+
+function deleteExistingDistanceLabel(){
+    try {
+        map.removeLayer('distanceLabelLayer')
+        map.removeSource('distanceLabel')
+    } catch(err) {
+        console.log(err)
+    }
 }
 
 function createPost() {
@@ -78,6 +171,8 @@ function createPost() {
 
 function successLocation(position) {
     console.log(position)
+    curLng = position.coords.longitude
+    curLat = position.coords.latitude
     setupMap([position.coords.longitude, position.coords.latitude])
 }
 
@@ -123,7 +218,7 @@ function setupMap(center) {
             },
             'properties': {
                 'description':
-                    '<strong>' + places_temp[i].name + '</strong>' + '<p>' + places_temp[i].detail + '</p>',
+                    '<h2>' + places_temp[i].name + '</h2>' + '<p>' + places_temp[i].detail + '</p>' + '<p>category: ' + places_temp[i].category + '</p>',
                 'icon': places_temp[i].category
             }
 
@@ -135,7 +230,7 @@ function setupMap(center) {
         'features': marker 
     }   
 
-    var map = new mapboxgl.Map({
+    map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v11',
         center: center,
@@ -167,6 +262,9 @@ function setupMap(center) {
             .setHTML(`
             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
                 Save
+            </button> <br>
+            <button type="button" class="btn btn-info" onclick="goHere(`+ curLng + ',' + curLat + ',' + coordinates.lng + ',' +  coordinates.lat +`)">
+                Go Here
             </button>
             `)
             .addTo(map);
@@ -196,6 +294,7 @@ function setupMap(center) {
                     if (!map.getLayer(layerID)) {
                         map.addLayer({
                             'id': layerID,
+                            'interactive': 'true',
                             'type': 'symbol',
                             'source': 'places',
                             'layout': {

@@ -127,7 +127,13 @@
                         </div>
                         <div class="mb-3">
                             <label for="category" class="col-form-label">Category:</label>
-                            <input required type="text" class="form-control" id="category" name="category">
+                            {{-- <input required type="text" class="form-control" id="category" name="category"> --}}
+                            <input type="text" list="category" class="form-control" name="category">
+                            <datalist id="category">
+                            @foreach ($maps as $map)
+                                <option>{{ $map->category }}</option>
+                            @endforeach
+                            </datalist>
                         </div>
                     </div>
                     <div class="modal-footer">

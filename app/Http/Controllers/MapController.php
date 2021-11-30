@@ -9,7 +9,9 @@ class MapController extends Controller
 {
     public function index()
     {
-        return view('welcome');
+        $maps = Map::select('category')->distinct()->get();
+        // dd($maps);
+        return view('welcome', compact('maps'));
     }
 
     public function getMapData()
