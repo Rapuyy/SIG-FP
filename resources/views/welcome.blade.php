@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>Laravel</title>
+        <title>Ur Saved Places</title>
 
         <!-- Fonts -->
         <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
@@ -55,8 +55,8 @@
                 font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
                 font-weight: 600;
                 position: absolute;
-                top: 95px;
-                left: 5px;
+                top: 65px;
+                right: 125px;
                 z-index: 1;
                 border-radius: 3px;
                 width: 120px;
